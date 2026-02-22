@@ -45,6 +45,9 @@ export function BottomTab() {
               )}>
                 {tab.label}
               </span>
+              {isActive && (
+                <div className="h-1 w-1 rounded-full bg-primary" />
+              )}
             </Link>
           );
         })}

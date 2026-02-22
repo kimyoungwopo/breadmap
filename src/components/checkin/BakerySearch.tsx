@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 import { searchBakeries, type KakaoPlace } from "@/lib/kakao/search";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
@@ -86,24 +87,18 @@ export function BakerySearch({ onSelect }: BakerySearchProps) {
         ))}
 
         {query && !loading && results.length === 0 && (
-          <div className="flex flex-col items-center gap-2 py-10">
-            <div className="text-3xl">🤔</div>
-            <p className="text-sm text-muted-foreground">
-              검색 결과가 없어요
-            </p>
-            <p className="text-xs text-muted-foreground">
-              다른 키워드로 다시 찾아보세요
-            </p>
-          </div>
+          <EmptyState
+            emoji="🤔"
+            title="검색 결과가 없어요"
+            description="다른 키워드로 다시 찾아보세요"
+          />
         )}
 
         {!query && (
-          <div className="flex flex-col items-center gap-2 py-10">
-            <div className="text-3xl">🍰</div>
-            <p className="text-sm text-muted-foreground">
-              오늘 다녀온 빵집을 검색해보세요
-            </p>
-          </div>
+          <EmptyState
+            emoji="🍰"
+            title="오늘 다녀온 빵집을 검색해보세요"
+          />
         )}
       </div>
     </div>

@@ -8,6 +8,9 @@ import { BakeryMarker } from "@/components/map/BakeryMarker";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { Plus, ChevronRight, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { searchNearbyBakeries, type KakaoPlace } from "@/lib/kakao/search";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -166,13 +169,16 @@ export default function HomePage() {
           </div>
         </div>
       ) : (
-        <KakaoMap
-          lat={lat}
-          lng={lng}
-          level={5}
-          className="h-[45vh] w-full"
-          onMapReady={handleMapReady}
-        />
+        <div className="relative">
+          <KakaoMap
+            lat={lat}
+            lng={lng}
+            level={5}
+            className="h-[45vh] w-full"
+            onMapReady={handleMapReady}
+          />
+          <div className="map-gradient-overlay pointer-events-none absolute bottom-0 left-0 right-0 h-8" />
+        </div>
       )}
 
       {/* 방문 빵집 마커 */}
@@ -213,7 +219,32 @@ export default function HomePage() {
             />
           ))}
 
-      <div className="flex flex-col gap-5 p-4">
+      <div className="flex flex-col gap-5 p-4 page-enter">
+        {/* 로딩 스켈레톤 */}
+        {loading && (
+          <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-3 gap-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-2 rounded-2xl bg-card p-3 shadow-sm">
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                  <Skeleton className="h-7 w-10" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))}
+            </div>
+            <Skeleton className="h-14 w-full rounded-2xl" />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm">
+                <Skeleton className="h-11 w-11 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* 비로그인 시 */}
         {!loading && !user && (
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-orange-500 p-5 text-white">
@@ -235,17 +266,17 @@ export default function HomePage() {
         {/* Stats */}
         {user && (
           <div className="grid grid-cols-3 gap-3">
-            <div className="flex flex-col items-center gap-1 rounded-2xl bg-card p-3 shadow-sm">
+            <div className="flex flex-col items-center gap-1 rounded-2xl bg-orange-50 p-3 shadow-sm animate-count-up" style={{ animationDelay: "0ms" }}>
               <span className="text-xl">📍</span>
               <p className="text-2xl font-bold">{stats.bakeries}</p>
               <p className="text-[11px] text-muted-foreground">정복 빵집</p>
             </div>
-            <div className="flex flex-col items-center gap-1 rounded-2xl bg-card p-3 shadow-sm">
+            <div className="flex flex-col items-center gap-1 rounded-2xl bg-amber-50 p-3 shadow-sm animate-count-up" style={{ animationDelay: "80ms", animationFillMode: "both" }}>
               <span className="text-xl">🥐</span>
               <p className="text-2xl font-bold">{stats.breads}</p>
               <p className="text-[11px] text-muted-foreground">먹은 빵</p>
             </div>
-            <div className="flex flex-col items-center gap-1 rounded-2xl bg-card p-3 shadow-sm">
+            <div className="flex flex-col items-center gap-1 rounded-2xl bg-emerald-50 p-3 shadow-sm animate-count-up" style={{ animationDelay: "160ms", animationFillMode: "both" }}>
               <span className="text-xl">🗺️</span>
               <p className="text-2xl font-bold">{stats.courses}</p>
               <p className="text-[11px] text-muted-foreground">순례 코스</p>
@@ -255,34 +286,41 @@ export default function HomePage() {
 
         {/* Quick checkin CTA */}
         {user && (
-          <button
+          <Button
             onClick={() => router.push("/checkin")}
-            className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/25 transition-transform active:scale-[0.98]"
+            size="cta"
+            className="w-full"
           >
             <Plus className="h-5 w-5" />
             오늘의 빵집 체크인하기!
-          </button>
+          </Button>
         )}
 
         {/* Recent checkins */}
         {recents.length > 0 && (
           <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-bold">최근 먹은 빵 🍰</h2>
-              <button
-                onClick={() => router.push("/profile")}
-                className="flex items-center text-xs font-medium text-primary"
-              >
-                더보기
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <SectionHeading
+              title="최근 먹은 빵 🍰"
+              className="mb-3"
+              action={
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => router.push("/profile")}
+                  className="text-xs font-medium text-primary"
+                >
+                  더보기
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              }
+            />
             <div className="flex flex-col gap-2">
-              {recents.map((checkin) => (
+              {recents.map((checkin, i) => (
                 <div
                   key={checkin.id}
                   onClick={() => router.push(`/bakery/${checkin.bakery_id}`)}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 shadow-sm active:scale-[0.98] transition-transform"
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 shadow-sm active:scale-[0.98] transition-all hover:shadow-md animate-count-up"
+                  style={{ animationDelay: `${i * 60}ms`, animationFillMode: "both" }}
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-xl">
                     🍞
@@ -319,15 +357,15 @@ export default function HomePage() {
 
         {/* Empty state */}
         {user && recents.length === 0 && !loading && (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <div className="text-5xl">🥖</div>
-            <p className="font-bold">아직 빵집 기록이 없어요!</p>
-            <p className="text-center text-sm text-muted-foreground">
-              가까운 빵집에 가서
-              <br />
-              첫 체크인을 찍어보세요 ✌️
-            </p>
-          </div>
+          <EmptyState
+            emoji="🥖"
+            title="아직 빵집 기록이 없어요!"
+            description={"가까운 빵집에 가서\n첫 체크인을 찍어보세요 ✌️"}
+            action={{
+              label: "첫 체크인하러 가기",
+              onClick: () => router.push("/checkin"),
+            }}
+          />
         )}
       </div>
     </div>

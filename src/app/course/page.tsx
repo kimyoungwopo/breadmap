@@ -8,6 +8,10 @@ import { RoutePreview } from "@/components/course/RoutePreview";
 import { CourseMap } from "@/components/course/CourseMap";
 import { CourseCard } from "@/components/course/CourseCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { optimizeOrder } from "@/lib/optimize-route";
 import { upsertBakery } from "@/lib/bakery-upsert";
@@ -188,8 +192,26 @@ export default function CoursePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className="flex flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
+          <div className="flex items-center px-4 py-3">
+            <h1 className="text-lg font-bold">빵지순례 코스</h1>
+          </div>
+        </header>
+        <div className="flex flex-col gap-5 p-4">
+          <Skeleton className="h-14 w-full rounded-2xl" />
+          {[0, 1].map((i) => (
+            <div key={i} className="rounded-2xl bg-card p-4 shadow-sm space-y-3">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-4 w-24" />
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -218,12 +240,14 @@ export default function CoursePage() {
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center gap-3 px-4 py-3">
           {step !== "list" && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={goBack}
-              className="rounded-xl p-1.5 hover:bg-muted active:scale-95 transition-transform"
+              className="rounded-xl"
             >
               <ArrowLeft className="h-5 w-5" />
-            </button>
+            </Button>
           )}
           <h1 className="text-lg font-bold">
             {step === "list" && "빵지순례 코스"}
@@ -234,21 +258,22 @@ export default function CoursePage() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-5 p-4">
+      <div className="flex flex-col gap-5 p-4 page-enter">
         {/* Step: List */}
         {step === "list" && (
           <>
-            <button
+            <Button
               onClick={() => setStep("select")}
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/25 transition-transform active:scale-[0.98]"
+              size="cta"
+              className="w-full"
             >
               <Plus className="h-5 w-5" />
               새 코스 만들기
-            </button>
+            </Button>
 
             {courses.length > 0 ? (
               <div className="flex flex-col gap-3">
-                <h2 className="font-bold">내 코스 📋</h2>
+                <SectionHeading title="내 코스 📋" />
                 {courses.map((course) => (
                   <CourseCard
                     key={course.id}
@@ -262,15 +287,11 @@ export default function CoursePage() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 py-10">
-                <div className="text-5xl">🗺️</div>
-                <p className="font-bold">아직 코스가 없어요!</p>
-                <p className="text-center text-sm text-muted-foreground">
-                  가고 싶은 빵집들을 골라서
-                  <br />
-                  최단거리 코스를 만들어보세요
-                </p>
-              </div>
+              <EmptyState
+                emoji="🗺️"
+                title="아직 코스가 없어요!"
+                description={"가고 싶은 빵집들을 골라서\n최단거리 코스를 만들어보세요"}
+              />
             )}
           </>
         )}
@@ -289,7 +310,8 @@ export default function CoursePage() {
             {selected.length >= 2 && (
               <Button
                 onClick={handleOptimize}
-                className="h-12 rounded-2xl text-base font-bold"
+                size="cta"
+                className="w-full"
               >
                 최적 경로 계산하기 🚀
               </Button>
@@ -311,19 +333,20 @@ export default function CoursePage() {
 
             <div className="flex flex-col gap-3">
               <label className="text-sm font-semibold">코스 이름</label>
-              <input
+              <Input
                 type="text"
                 placeholder="예: 성수동 빵집 투어"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="h-12 rounded-2xl bg-secondary px-4 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary"
+                className="h-12 rounded-2xl"
               />
             </div>
 
             <Button
               onClick={handleSave}
               disabled={saving || !title.trim()}
-              className="h-12 rounded-2xl text-base font-bold"
+              size="cta"
+              className="w-full"
             >
               {saving ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

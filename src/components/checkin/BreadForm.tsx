@@ -35,10 +35,10 @@ function StarRating({
           key={star}
           type="button"
           onClick={() => onChange(star)}
-          className="transition-transform active:scale-110"
+          className="transition-transform duration-200 hover:scale-110 active:scale-125"
         >
           <Star
-            className={`h-7 w-7 ${
+            className={`h-7 w-7 transition-colors duration-200 ${
               star <= rating
                 ? "fill-yellow-400 text-yellow-400"
                 : "text-gray-200"
@@ -170,15 +170,15 @@ export function BreadForm({ onSubmit, loading = false }: BreadFormProps) {
             {bread.photo_url ? (
               <button
                 onClick={() => fileInputRefs.current[index]?.click()}
-                className="relative w-full overflow-hidden rounded-xl"
+                className="group relative w-full overflow-hidden rounded-xl"
               >
                 <img
                   src={bread.photo_url}
                   alt="빵 사진"
-                  className="h-40 w-full object-cover"
+                  className="h-40 w-full object-cover transition-transform duration-200 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <Camera className="h-6 w-6 text-white" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30">
+                  <Camera className="h-6 w-6 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 </div>
               </button>
             ) : (
@@ -248,10 +248,11 @@ export function BreadForm({ onSubmit, loading = false }: BreadFormProps) {
       )}
 
       {/* 체크인 버튼 */}
-      <button
+      <Button
         onClick={handleSubmit}
         disabled={!isValid || loading || uploading}
-        className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
+        size="cta"
+        className="w-full"
       >
         {uploading || loading ? (
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -261,7 +262,7 @@ export function BreadForm({ onSubmit, loading = false }: BreadFormProps) {
           : loading
             ? "저장하는 중... ✍️"
             : "체크인 완료! 🎉"}
-      </button>
+      </Button>
     </div>
   );
 }

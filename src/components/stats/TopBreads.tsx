@@ -13,6 +13,7 @@ interface TopBreadsProps {
 }
 
 const medals = ["🥇", "🥈", "🥉"];
+const bgColors = ["bg-yellow-50", "bg-gray-50", "bg-orange-50"];
 
 export function TopBreads({ breads }: TopBreadsProps) {
   if (breads.length === 0) return null;
@@ -24,7 +25,7 @@ export function TopBreads({ breads }: TopBreadsProps) {
         {breads.slice(0, 3).map((bread, i) => (
           <div
             key={`${bread.name}-${bread.bakeryName}`}
-            className="flex items-center gap-3"
+            className={`flex items-center gap-3 rounded-xl p-2.5 ${bgColors[i] || ""}`}
           >
             <span className="text-xl">{medals[i]}</span>
             <div className="min-w-0 flex-1">
@@ -33,7 +34,7 @@ export function TopBreads({ breads }: TopBreadsProps) {
                 {bread.bakeryName}
               </p>
             </div>
-            <div className="flex items-center gap-0.5 rounded-lg bg-yellow-50 px-2 py-1 text-xs font-semibold text-yellow-600">
+            <div className="flex items-center gap-0.5 rounded-lg bg-white/80 px-2 py-1 text-xs font-semibold text-yellow-600">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               {bread.rating}
             </div>

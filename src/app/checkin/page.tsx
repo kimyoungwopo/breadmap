@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { BakerySearch } from "@/components/checkin/BakerySearch";
 import { BreadForm } from "@/components/checkin/BreadForm";
 import { CheckinCard } from "@/components/checkin/CheckinCard";
@@ -129,15 +130,17 @@ function CheckinContent() {
     <div className="flex flex-col">
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               if (step === "record") setStep("search");
               else router.push("/");
             }}
-            className="rounded-xl p-1.5 hover:bg-muted active:scale-95 transition-transform"
+            className="rounded-xl"
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <h1 className="text-lg font-bold">
             {step === "search" && "어디 갔다왔어요? 🔍"}
             {step === "record" && selectedPlace?.place_name}
@@ -146,7 +149,23 @@ function CheckinContent() {
         </div>
       </header>
 
-      <div className="p-4">
+      {/* Step indicator */}
+      {step !== "done" && (
+        <div className="flex gap-1.5 px-4 pt-3">
+          {["search", "record"].map((s, i) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                i <= (step === "search" ? 0 : 1)
+                  ? "bg-primary"
+                  : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="p-4 page-enter">
         {step === "search" && <BakerySearch onSelect={handleSelectBakery} />}
 
         {step === "record" && selectedPlace && (

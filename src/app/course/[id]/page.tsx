@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { KakaoMap } from "@/components/map/KakaoMap";
 import { BakeryMarker } from "@/components/map/BakeryMarker";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   MapPin,
@@ -120,20 +123,46 @@ export default function CourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className="flex flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Button variant="ghost" size="icon" onClick={() => router.push("/course")} className="rounded-xl">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Skeleton className="h-6 w-32" />
+          </div>
+        </header>
+        <Skeleton className="h-[280px] w-full" />
+        <div className="flex flex-col gap-5 p-4">
+          <div className="rounded-2xl bg-card p-4 shadow-sm space-y-3">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 p-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
-        <div className="text-4xl">😢</div>
-        <p className="font-bold">코스를 찾을 수 없어요</p>
-        <Button variant="outline" onClick={() => router.push("/course")}>
-          돌아가기
-        </Button>
+      <div className="flex min-h-dvh items-center justify-center">
+        <EmptyState
+          emoji="😢"
+          title="코스를 찾을 수 없어요"
+          action={{
+            label: "돌아가기",
+            onClick: () => router.push("/course"),
+          }}
+        />
       </div>
     );
   }
@@ -155,32 +184,38 @@ export default function CourseDetailPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.push("/course")}
-            className="rounded-xl p-1.5 hover:bg-muted active:scale-95 transition-transform"
+            className="rounded-xl"
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <h1 className="flex-1 truncate text-lg font-bold">
             {course.title}
           </h1>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleDelete}
-            className="rounded-lg p-1.5 hover:bg-muted"
           >
             <Trash2 className="h-4 w-4 text-muted-foreground" />
-          </button>
+          </Button>
         </div>
       </header>
 
       {/* Map */}
-      <KakaoMap
-        lat={center.lat}
-        lng={center.lng}
-        level={7}
-        className="h-[280px] w-full"
-        onMapReady={handleMapReady}
-      />
+      <div className="relative">
+        <KakaoMap
+          lat={center.lat}
+          lng={center.lng}
+          level={7}
+          className="h-[280px] w-full"
+          onMapReady={handleMapReady}
+        />
+        <div className="map-gradient-overlay pointer-events-none absolute bottom-0 left-0 right-0 h-6" />
+      </div>
       {map &&
         course.stops.map((stop, i) => (
           <BakeryMarker
@@ -195,7 +230,7 @@ export default function CourseDetailPage() {
           />
         ))}
 
-      <div className="flex flex-col gap-5 p-4">
+      <div className="flex flex-col gap-5 p-4 page-enter">
         {/* Course Info Card */}
         <div className="rounded-2xl bg-card p-4 shadow-sm">
           <h2 className="text-xl font-bold">{course.title}</h2>
@@ -221,7 +256,7 @@ export default function CourseDetailPage() {
 
         {/* Stops */}
         <div>
-          <h3 className="mb-3 font-bold">순례 코스 🚶</h3>
+          <SectionHeading title="순례 코스 🚶" className="mb-3" />
           <div className="flex flex-col">
             {course.stops.map((stop, i) => (
               <div key={stop.id}>

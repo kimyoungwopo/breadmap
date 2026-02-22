@@ -1,6 +1,7 @@
 "use client";
 
 import { Star, MapPin, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CheckinCardProps {
   bakeryName: string;
@@ -20,11 +21,11 @@ export function CheckinCard({
   onClose,
 }: CheckinCardProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
-      <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-card shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 animate-in fade-in duration-200">
+      <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-card shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
         {/* 헤더 - 축하 */}
         <div className="bg-gradient-to-br from-primary to-orange-500 p-6 text-center text-white">
-          <p className="text-5xl">🎉</p>
+          <p className="text-5xl animate-celebrate">🎉</p>
           <h2 className="mt-2 text-xl font-bold">체크인 성공!</h2>
           <p className="mt-1 text-sm opacity-90">
             {totalCheckins}번째 빵집 정복 완료! 🔥
@@ -78,19 +79,20 @@ export function CheckinCard({
 
           {/* 버튼 */}
           <div className="flex gap-2.5">
-            <button
+            <Button
               onClick={onShare}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-border py-3 text-sm font-semibold transition-colors hover:bg-muted active:scale-[0.98]"
+              variant="outline"
+              className="flex-1 rounded-2xl py-3 h-auto"
             >
               <Share2 className="h-4 w-4" />
               자랑하기
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onClose}
-              className="flex flex-1 items-center justify-center rounded-2xl bg-primary py-3 text-sm font-bold text-white transition-transform active:scale-[0.98]"
+              className="flex-1 rounded-2xl py-3 h-auto font-bold"
             >
               좋아요! 👍
-            </button>
+            </Button>
           </div>
         </div>
       </div>

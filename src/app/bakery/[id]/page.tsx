@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { KakaoMap } from "@/components/map/KakaoMap";
 import { BakeryMarker } from "@/components/map/BakeryMarker";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   MapPin,
@@ -14,6 +15,9 @@ import {
   Loader2,
   Camera,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionHeading } from "@/components/ui/section-heading";
 import type { Bakery, Bread } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -91,10 +95,38 @@ export default function BakeryDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
+      <div className="flex flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-xl">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Skeleton className="h-6 w-32" />
+          </div>
+        </header>
+        <Skeleton className="h-[200px] w-full" />
+        <div className="flex flex-col gap-5 p-4">
+          <div className="rounded-2xl bg-card p-4 shadow-sm space-y-3">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-56" />
+            <div className="flex justify-around border-t border-border pt-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <Skeleton className="h-6 w-10" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm">
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -102,12 +134,15 @@ export default function BakeryDetailPage() {
 
   if (!bakery) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
-        <div className="text-4xl">😢</div>
-        <p className="font-bold">빵집을 찾을 수 없어요</p>
-        <Button variant="outline" onClick={() => router.back()}>
-          돌아가기
-        </Button>
+      <div className="flex min-h-dvh items-center justify-center">
+        <EmptyState
+          emoji="😢"
+          title="빵집을 찾을 수 없어요"
+          action={{
+            label: "돌아가기",
+            onClick: () => router.back(),
+          }}
+        />
       </div>
     );
   }
@@ -124,29 +159,34 @@ export default function BakeryDetailPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.back()}
-            className="rounded-xl p-1.5 hover:bg-muted active:scale-95 transition-transform"
+            className="rounded-xl"
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <h1 className="truncate text-lg font-bold">{bakery.name}</h1>
           {hasVisited && (
-            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            <Badge variant="secondary" className="shrink-0 text-primary bg-primary/10">
               방문완료
-            </span>
+            </Badge>
           )}
         </div>
       </header>
 
       {/* Mini Map */}
-      <KakaoMap
-        lat={bakery.lat}
-        lng={bakery.lng}
-        level={3}
-        className="h-[200px] w-full"
-        onMapReady={handleMapReady}
-      />
+      <div className="relative">
+        <KakaoMap
+          lat={bakery.lat}
+          lng={bakery.lng}
+          level={3}
+          className="h-[200px] w-full"
+          onMapReady={handleMapReady}
+        />
+        <div className="map-gradient-overlay pointer-events-none absolute bottom-0 left-0 right-0 h-6" />
+      </div>
       {map && (
         <BakeryMarker
           map={map}
@@ -157,7 +197,7 @@ export default function BakeryDetailPage() {
         />
       )}
 
-      <div className="flex flex-col gap-5 p-4">
+      <div className="flex flex-col gap-5 p-4 page-enter">
         {/* Info Card */}
         <div className="rounded-2xl bg-card p-4 shadow-sm">
           <h2 className="text-xl font-bold">{bakery.name}</h2>
@@ -166,9 +206,9 @@ export default function BakeryDetailPage() {
             <span>{bakery.address}</span>
           </div>
           {bakery.category && (
-            <span className="mt-2 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-xs text-secondary-foreground">
+            <Badge variant="secondary" className="mt-2">
               {bakery.category}
-            </span>
+            </Badge>
           )}
 
           {/* Stats Row */}
@@ -198,12 +238,12 @@ export default function BakeryDetailPage() {
         {/* Top Breads */}
         {allBreads.length > 0 && (
           <div>
-            <h3 className="mb-3 font-bold">기록된 빵 🍞</h3>
+            <SectionHeading title="기록된 빵 🍞" className="mb-3" />
             <div className="flex flex-col gap-2">
               {allBreads.slice(0, 10).map((bread) => (
                 <div
                   key={bread.id}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm transition-shadow hover:shadow-md"
                 >
                   {bread.photo_url ? (
                     <img
@@ -241,7 +281,7 @@ export default function BakeryDetailPage() {
         {/* Checkin History */}
         {bakery.checkins.length > 0 && (
           <div>
-            <h3 className="mb-3 font-bold">체크인 기록 📋</h3>
+            <SectionHeading title="체크인 기록 📋" className="mb-3" />
             <div className="flex flex-col gap-2">
               {bakery.checkins.map((checkin) => (
                 <div
@@ -284,12 +324,13 @@ export default function BakeryDetailPage() {
       {/* Floating CTA */}
       {user && (
         <div className="fixed inset-x-0 bottom-16 z-30 p-4">
-          <button
+          <Button
             onClick={handleCheckin}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/25 transition-transform active:scale-[0.98]"
+            size="cta"
+            className="w-full"
           >
             {hasVisited ? "다시 체크인하기! 🍞" : "여기도 체크인! 🍞"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

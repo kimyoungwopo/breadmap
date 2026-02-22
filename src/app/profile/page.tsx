@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { LogOut, Star, ChevronRight } from "lucide-react";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { MonthlyChart } from "@/components/stats/MonthlyChart";
 import { TopBreads } from "@/components/stats/TopBreads";
 import { FavoriteBakeries } from "@/components/stats/FavoriteBakeries";
@@ -161,10 +165,35 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="text-4xl animate-bounce">🍞</div>
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
+      <div className="flex flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
+          <div className="flex items-center px-4 py-3">
+            <h1 className="text-lg font-bold">마이</h1>
+          </div>
+        </header>
+        <div className="flex flex-col gap-5 p-4">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-card p-6 shadow-sm">
+            <Skeleton className="h-20 w-20 rounded-full" />
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+            <div className="mt-2 flex w-full justify-around">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <Skeleton className="h-6 w-8" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm">
+              <Skeleton className="h-11 w-11 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -207,17 +236,19 @@ export default function ProfilePage() {
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <h1 className="text-lg font-bold">마이</h1>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleLogout}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+            className="gap-1 text-xs text-muted-foreground"
           >
             <LogOut className="h-3.5 w-3.5" />
             로그아웃
-          </button>
+          </Button>
         </div>
       </header>
 
-      <div className="flex flex-col gap-5 p-4">
+      <div className="flex flex-col gap-5 p-4 page-enter">
         {/* Profile card */}
         <div className="flex flex-col items-center gap-3 rounded-2xl bg-card p-6 shadow-sm">
           <Avatar className="h-20 w-20">
@@ -228,9 +259,9 @@ export default function ProfilePage() {
           </Avatar>
           <div className="text-center">
             <p className="text-xl font-bold">{nickname}</p>
-            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+            <Badge variant="secondary" className="mt-1 px-3 py-1 text-xs font-semibold">
               {badge.emoji} {badge.title}
-            </div>
+            </Badge>
           </div>
 
           {/* Inline stats */}
@@ -255,7 +286,7 @@ export default function ProfilePage() {
         {/* 통계 섹션 */}
         {checkins.length > 0 && (
           <div className="flex flex-col gap-4">
-            <h2 className="font-bold">나의 빵 통계 📊</h2>
+            <SectionHeading title="나의 빵 통계 📊" />
             <MonthlyChart data={monthlyData} />
             <TopBreads breads={topBreads} />
             <FavoriteBakeries bakeries={favBakeries} />
@@ -266,14 +297,15 @@ export default function ProfilePage() {
 
         {/* 체크인 기록 */}
         <div>
-          <h2 className="mb-3 font-bold">체크인 기록 📋</h2>
+          <SectionHeading title="체크인 기록 📋" className="mb-3" />
           {checkins.length > 0 ? (
             <div className="flex flex-col gap-2">
-              {checkins.map((c) => (
+              {checkins.map((c, i) => (
                 <div
                   key={c.id}
                   onClick={() => router.push(`/bakery/${c.bakery_id}`)}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 shadow-sm active:scale-[0.98] transition-transform"
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 shadow-sm active:scale-[0.98] transition-all hover:shadow-md animate-count-up"
+                  style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-xl">
                     🍞
@@ -306,16 +338,14 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 rounded-2xl bg-card py-10 shadow-sm">
-              <div className="text-4xl">🥖</div>
-              <p className="text-sm font-medium">아직 기록이 없어요!</p>
-              <button
-                onClick={() => router.push("/checkin")}
-                className="mt-1 text-sm font-semibold text-primary"
-              >
-                첫 체크인하러 가기 →
-              </button>
-            </div>
+            <EmptyState
+              emoji="🥖"
+              title="아직 기록이 없어요!"
+              action={{
+                label: "첫 체크인하러 가기",
+                onClick: () => router.push("/checkin"),
+              }}
+            />
           )}
         </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Search, X, MapPin, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { searchBakeries, type KakaoPlace } from "@/lib/kakao/search";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
@@ -115,13 +116,13 @@ export function BakerySelector({
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
+              <Input
                 type="text"
                 placeholder="빵집 이름으로 검색..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="h-10 w-full rounded-xl bg-secondary pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary"
+                className="h-10 rounded-xl pl-9"
                 autoFocus
               />
             </div>
