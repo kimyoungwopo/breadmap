@@ -226,6 +226,9 @@ export default function CourseDetailPage() {
             name={stop.bakery.name}
             visited
             order={i + 1}
+            rating={stop.bakery.avg_rating}
+            checkinCount={stop.bakery.checkin_count}
+            showInfoWindow
             onClick={() => router.push(`/bakery/${stop.bakery.id}`)}
           />
         ))}

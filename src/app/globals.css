@@ -141,6 +141,152 @@
   background: linear-gradient(to top, var(--background) 0%, transparent 100%);
 }
 
+/* Marker label */
+.marker-label {
+  background: white;
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1C1917;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Marker InfoWindow */
+.marker-info-window {
+  position: relative;
+  background: white;
+  border-radius: 14px;
+  padding: 14px;
+  min-width: 180px;
+  max-width: 220px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+}
+
+.marker-info-window::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 9px solid white;
+}
+
+.marker-info-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #A8A29E;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.marker-info-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1C1917;
+  margin: 0 0 6px;
+  padding-right: 20px;
+}
+
+.marker-info-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.marker-info-rating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #CA8A04;
+}
+
+.marker-info-star {
+  color: #FACC15;
+  font-size: 13px;
+}
+
+.marker-info-checkins {
+  font-size: 11px;
+  color: #78716C;
+}
+
+.marker-info-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.marker-info-btn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.marker-info-btn-detail {
+  background: #F5F0EB;
+  color: #1C1917;
+}
+
+.marker-info-btn-checkin {
+  background: #E8853D;
+  color: white;
+}
+
+/* Cluster styles */
+.cluster-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgba(232, 133, 61, 0.35);
+}
+
+.cluster-marker-sm {
+  width: 40px;
+  height: 40px;
+  font-size: 13px;
+  background: linear-gradient(135deg, #E8853D 0%, #F59E0B 100%);
+}
+
+.cluster-marker-md {
+  width: 50px;
+  height: 50px;
+  font-size: 15px;
+  background: linear-gradient(135deg, #E8853D 0%, #D97706 100%);
+}
+
+.cluster-marker-lg {
+  width: 60px;
+  height: 60px;
+  font-size: 17px;
+  background: linear-gradient(135deg, #DC6A1A 0%, #B45309 100%);
+}
+
 /* PWA standalone mode: safe area for notch devices */
 @supports (padding: env(safe-area-inset-bottom)) {
   .pb-safe {

@@ -5,15 +5,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { KakaoMap } from "@/components/map/KakaoMap";
 import { BakeryMarker } from "@/components/map/BakeryMarker";
+import { BakeryCluster, type BakeryPin } from "@/components/map/BakeryCluster";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { searchNearbyBakeries, type KakaoPlace } from "@/lib/kakao/search";
 import { Loader2 } from "lucide-react";
 
-interface BakeryPin {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
+interface MapBakeryPin extends BakeryPin {
   kakao_place_id?: string;
 }
 
@@ -21,7 +18,7 @@ export default function MapPage() {
   const router = useRouter();
   const { lat, lng, loading: geoLoading } = useGeolocation();
   const [map, setMap] = useState<any>(null);
-  const [pins, setPins] = useState<BakeryPin[]>([]);
+  const [pins, setPins] = useState<MapBakeryPin[]>([]);
   const [nearbyPins, setNearbyPins] = useState<KakaoPlace[]>([]);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
 
@@ -40,16 +37,20 @@ export default function MapPage() {
 
       const { data: checkins } = await supabase
         .from("checkins")
-        .select("bakery:bakeries(id, name, lat, lng, kakao_place_id)")
+        .select("bakery:bakeries(id, name, lat, lng, kakao_place_id, avg_rating, checkin_count)")
         .eq("user_id", user.id);
 
       const placeIdSet = new Set<string>();
       if (checkins) {
-        const bakeryMap = new Map<string, BakeryPin>();
+        const bakeryMap = new Map<string, MapBakeryPin>();
         for (const c of checkins) {
           const b = c.bakery as any;
           if (b && !bakeryMap.has(b.id)) {
-            bakeryMap.set(b.id, b);
+            bakeryMap.set(b.id, {
+              ...b,
+              rating: b.avg_rating,
+              checkinCount: b.checkin_count,
+            });
             if (b.kakao_place_id) placeIdSet.add(b.kakao_place_id);
           }
         }
@@ -106,19 +107,14 @@ export default function MapPage() {
         />
       )}
 
-      {/* 방문 빵집 마커 */}
-      {map &&
-        pins.map((pin) => (
-          <BakeryMarker
-            key={pin.id}
-            map={map}
-            lat={pin.lat}
-            lng={pin.lng}
-            name={pin.name}
-            visited
-            onClick={() => router.push(`/bakery/${pin.id}`)}
-          />
-        ))}
+      {/* 방문 빵집 — 클러스터 */}
+      {map && pins.length > 0 && (
+        <BakeryCluster
+          map={map}
+          pins={pins}
+          onPinClick={(pin) => router.push(`/bakery/${pin.id}`)}
+        />
+      )}
 
       {/* 주변 미방문 빵집 마커 */}
       {map &&
@@ -131,7 +127,8 @@ export default function MapPage() {
               lat={Number(pin.y)}
               lng={Number(pin.x)}
               name={pin.place_name}
-              onClick={() => {
+              showInfoWindow
+              onCheckin={() => {
                 const params = new URLSearchParams({
                   name: pin.place_name,
                   address: pin.road_address_name || pin.address_name,

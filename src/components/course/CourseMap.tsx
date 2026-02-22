@@ -73,6 +73,8 @@ export function CourseMap({ stops, className = "h-[300px] w-full" }: CourseMapPr
             name={stop.name}
             visited
             order={i + 1}
+            showLabel
+            showInfoWindow={false}
           />
         ))}
     </div>

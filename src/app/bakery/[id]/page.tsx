@@ -194,6 +194,8 @@ export default function BakeryDetailPage() {
           lng={bakery.lng}
           name={bakery.name}
           visited={hasVisited}
+          showLabel={false}
+          showInfoWindow={false}
         />
       )}
 
