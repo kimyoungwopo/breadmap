@@ -1,0 +1,22 @@
+{
+  "name": "빵지순례 - 나만의 빵집 도장깨기",
+  "short_name": "빵지순례",
+  "description": "전국 빵집 체크인, 빵지도, 최단거리 코스 네비게이션",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF8F0",
+  "theme_color": "#E8853D",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
