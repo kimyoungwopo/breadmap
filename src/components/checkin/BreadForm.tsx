@@ -5,6 +5,8 @@ import { Camera, Plus, Star, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { resizeImage } from "@/lib/image-resize";
+import { toast } from "sonner";
 
 interface BreadEntry {
   name: string;
@@ -87,14 +89,20 @@ export function BreadForm({ onSubmit, loading = false }: BreadFormProps) {
       let photoUrl = bread.photo_url;
 
       if (bread.photoFile) {
-        const path = `breads/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+        const resized = await resizeImage(bread.photoFile);
+        const ext = resized.type === "image/webp" ? "webp" : bread.photoFile.name.split(".").pop() ?? "jpg";
+        const path = `breads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error } = await supabase.storage
           .from("photos")
-          .upload(path, bread.photoFile, {
-            contentType: bread.photoFile.type,
+          .upload(path, resized, {
+            contentType: resized.type || "image/webp",
           });
 
-        if (!error) {
+        if (error) {
+          toast.error("사진 업로드에 실패했어요", {
+            description: error.message,
+          });
+        } else {
           const {
             data: { publicUrl },
           } = supabase.storage.from("photos").getPublicUrl(path);
