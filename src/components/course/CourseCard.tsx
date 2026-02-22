@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { MapPin, Navigation, Trash2 } from "lucide-react";
 
 interface CourseStop {
@@ -28,13 +29,17 @@ export function CourseCard({
   stops,
   onDelete,
 }: CourseCardProps) {
+  const router = useRouter();
   const formatDistance = (m: number) => {
     if (m < 1000) return `${m}m`;
     return `${(m / 1000).toFixed(1)}km`;
   };
 
   return (
-    <div className="rounded-2xl bg-card p-4 shadow-sm">
+    <div
+      onClick={() => router.push(`/course/${id}`)}
+      className="cursor-pointer rounded-2xl bg-card p-4 shadow-sm active:scale-[0.98] transition-transform"
+    >
       <div className="flex items-start justify-between">
         <div>
           <h3 className="font-bold">{title}</h3>
@@ -55,7 +60,10 @@ export function CourseCard({
           </div>
         </div>
         <button
-          onClick={() => onDelete(id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(id);
+          }}
           className="rounded-lg p-1.5 hover:bg-muted"
         >
           <Trash2 className="h-4 w-4 text-muted-foreground" />
