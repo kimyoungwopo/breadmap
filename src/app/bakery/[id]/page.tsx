@@ -18,13 +18,15 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
-import type { Bakery, Bread } from "@/types";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import type { Bakery, Bread, FeedUser } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface CheckinWithBreads {
   id: string;
   user_id: string;
   visited_at: string;
+  user?: FeedUser;
   breads: Bread[];
 }
 
@@ -283,7 +285,7 @@ export default function BakeryDetailPage() {
         {/* Checkin History */}
         {bakery.checkins.length > 0 && (
           <div>
-            <SectionHeading title="체크인 기록 📋" className="mb-3" />
+            <SectionHeading title="커뮤니티 후기 💬" className="mb-3" />
             <div className="flex flex-col gap-2">
               {bakery.checkins.map((checkin) => (
                 <div
@@ -291,7 +293,19 @@ export default function BakeryDetailPage() {
                   className="rounded-2xl bg-card p-3 shadow-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    {checkin.user ? (
+                      <Avatar size="sm">
+                        {checkin.user.avatar_url && (
+                          <AvatarImage src={checkin.user.avatar_url} alt={checkin.user.nickname} />
+                        )}
+                        <AvatarFallback>{checkin.user.nickname.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    {checkin.user && (
+                      <span className="text-xs font-semibold">{checkin.user.nickname}</span>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatDate(checkin.visited_at)}
                     </span>

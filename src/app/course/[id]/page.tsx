@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { KakaoMap } from "@/components/map/KakaoMap";
 import { BakeryMarker } from "@/components/map/BakeryMarker";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useCourseClone } from "@/hooks/useCourseClone";
 import {
   ArrowLeft,
   MapPin,
@@ -16,8 +19,11 @@ import {
   ArrowDown,
   Loader2,
   Trash2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { FeedUser } from "@/types";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface StopBakery {
   id: string;
@@ -39,11 +45,13 @@ interface CourseStop {
 
 interface CourseDetail {
   id: string;
+  user_id: string;
   title: string;
   region: string | null;
   total_distance_m: number | null;
   total_duration_s: number | null;
   created_at: string;
+  user?: FeedUser;
   stops: CourseStop[];
 }
 
@@ -53,6 +61,8 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [map, setMap] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [authUser, setAuthUser] = useState<SupabaseUser | null>(null);
+  const { cloneCourse, isCloning } = useCourseClone();
 
   const handleMapReady = useCallback((m: any) => {
     setMap(m);
@@ -60,6 +70,10 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     const load = async () => {
+      const supabase = createClient();
+      const { data: { user: u } } = await supabase.auth.getUser();
+      setAuthUser(u);
+
       const res = await fetch(`/api/courses/${id}`);
       if (res.ok) {
         setCourse(await res.json());
@@ -195,13 +209,28 @@ export default function CourseDetailPage() {
           <h1 className="flex-1 truncate text-lg font-bold">
             {course.title}
           </h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          {authUser?.id === course.user_id ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+            >
+              <Trash2 className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          ) : authUser ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isCloning}
+              onClick={() => cloneCourse(course.id)}
+            >
+              {isCloning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          ) : null}
         </div>
       </header>
 
@@ -236,6 +265,22 @@ export default function CourseDetailPage() {
       <div className="flex flex-col gap-5 p-4 page-enter">
         {/* Course Info Card */}
         <div className="rounded-2xl bg-card p-4 shadow-sm">
+          {course.user && (
+            <div className="mb-3 flex items-center gap-2.5">
+              <Avatar size="sm">
+                {course.user.avatar_url && (
+                  <AvatarImage src={course.user.avatar_url} alt={course.user.nickname} />
+                )}
+                <AvatarFallback>{course.user.nickname.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-semibold">{course.user.nickname}</span>
+              {authUser?.id === course.user_id && (
+                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  나
+                </span>
+              )}
+            </div>
+          )}
           <h2 className="text-xl font-bold">{course.title}</h2>
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             {course.region && (

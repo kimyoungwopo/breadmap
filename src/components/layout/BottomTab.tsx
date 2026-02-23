@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/", label: "홈", emoji: "🏠", activeEmoji: "🍞" },
+  { href: "/discover", label: "탐색", emoji: "🔍", activeEmoji: "🔍" },
   { href: "/checkin", label: "체크인", emoji: "➕", activeEmoji: "✅" },
   { href: "/course", label: "코스", emoji: "🗺️", activeEmoji: "🗺️" },
   { href: "/profile", label: "마이", emoji: "👤", activeEmoji: "😊" },

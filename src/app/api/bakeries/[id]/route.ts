@@ -30,6 +30,7 @@ export async function GET(
         id,
         user_id,
         visited_at,
+        user:users(id, nickname, avatar_url),
         breads(id, name, photo_url, rating, memo)
       `)
       .eq("bakery_id", id)

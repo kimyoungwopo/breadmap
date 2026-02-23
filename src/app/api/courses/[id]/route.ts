@@ -13,6 +13,7 @@ export async function GET(
       .from("courses")
       .select(`
         *,
+        user:users(id, nickname, avatar_url),
         stops:course_stops(
           id,
           stop_order,

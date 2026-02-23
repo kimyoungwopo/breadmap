@@ -72,3 +72,33 @@ export interface OptimizedRoute {
   order: Place[];
   totalDistance: number;
 }
+
+// Feed / Community types
+export interface FeedUser {
+  id: string;
+  nickname: string;
+  avatar_url: string | null;
+}
+
+export interface ReviewFeedItem {
+  type: "review";
+  id: string;
+  user: FeedUser;
+  bakery: Pick<Bakery, "id" | "name" | "address" | "avg_rating">;
+  breads: Bread[];
+  visited_at: string;
+  created_at: string;
+}
+
+export interface CourseFeedItem {
+  type: "course";
+  id: string;
+  user: FeedUser;
+  title: string;
+  region: string | null;
+  total_distance_m: number | null;
+  stops: { stop_order: number; bakery: Pick<Bakery, "id" | "name"> }[];
+  created_at: string;
+}
+
+export type FeedItem = ReviewFeedItem | CourseFeedItem;
