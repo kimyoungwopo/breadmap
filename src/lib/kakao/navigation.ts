@@ -16,7 +16,7 @@ export function openKakaoNavi(name: string, lat: number, lng: number) {
  * Open Naver Map with full multi-stop course route.
  * Uses web URL which acts as Universal Link — opens app if installed,
  * falls back to web gracefully (no Safari "invalid address" error).
- * Path format: /directions/{lng},{lat},{name}/{lng},{lat},{name}/.../car
+ * Path format: /directions/{lng},{lat},{name}/{lng},{lat},{name}/.../walk
  */
 export function openNaverNaviCourse(
   stops: { name: string; lat: number; lng: number }[]
@@ -31,6 +31,6 @@ export function openNaverNaviCourse(
     (s) => `${s.lng},${s.lat},${encodeURIComponent(s.name)}`
   );
 
-  const webUrl = `https://map.naver.com/p/directions/${segments.join("/")}/car`;
+  const webUrl = `https://map.naver.com/p/directions/${segments.join("/")}/walk`;
   window.open(webUrl, "_blank");
 }
