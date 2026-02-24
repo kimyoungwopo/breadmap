@@ -28,7 +28,7 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { openKakaoNavi, openKakaoNaviCourse } from "@/lib/kakao/navigation";
+import { openKakaoNavi, openNaverNaviCourse } from "@/lib/kakao/navigation";
 import type { FeedUser } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -408,7 +408,7 @@ export default function CourseDetailPage() {
             size="cta"
             className="w-full"
             onClick={() =>
-              openKakaoNaviCourse(
+              openNaverNaviCourse(
                 course.stops.map((s) => ({
                   name: s.bakery.name,
                   lat: s.bakery.lat,
@@ -418,7 +418,7 @@ export default function CourseDetailPage() {
             }
           >
             <Navigation className="h-5 w-5" />
-            카카오맵에서 전체 코스 보기
+            네이버 지도로 코스 네비 시작
           </Button>
         )}
 

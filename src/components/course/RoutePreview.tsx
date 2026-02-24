@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowDown, Navigation } from "lucide-react";
-import { openKakaoNavi } from "@/lib/kakao/navigation";
+import { openKakaoNavi, openNaverNaviCourse } from "@/lib/kakao/navigation";
+import { Button } from "@/components/ui/button";
 import type { SelectedBakery } from "./BakerySelector";
 
 interface RoutePreviewProps {
@@ -26,6 +27,23 @@ export function RoutePreview({ stops, totalDistance }: RoutePreviewProps) {
       </div>
 
       <div className="rounded-2xl bg-card p-4 shadow-sm">
+        {/* Naver navi CTA */}
+        {stops.length >= 2 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mb-3 w-full gap-1.5 rounded-xl"
+            onClick={() =>
+              openNaverNaviCourse(
+                stops.map((s) => ({ name: s.name, lat: s.lat, lng: s.lng }))
+              )
+            }
+          >
+            <Navigation className="h-3.5 w-3.5" />
+            네이버 지도로 전체 경로 보기
+          </Button>
+        )}
+
         {stops.map((stop, i) => (
           <div key={stop.id}>
             <div className="flex items-center gap-3">
