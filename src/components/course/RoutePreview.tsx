@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDown, Navigation } from "lucide-react";
+import { openKakaoNavi } from "@/lib/kakao/navigation";
 import type { SelectedBakery } from "./BakerySelector";
 
 interface RoutePreviewProps {
@@ -37,6 +38,13 @@ export function RoutePreview({ stops, totalDistance }: RoutePreviewProps) {
                   {stop.address}
                 </p>
               </div>
+              <button
+                onClick={() => openKakaoNavi(stop.name, stop.lat, stop.lng)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary active:scale-95 transition-transform"
+                title="길찾기"
+              >
+                <Navigation className="h-3.5 w-3.5" />
+              </button>
             </div>
             {i < stops.length - 1 && (
               <div className="ml-[15px] flex items-center gap-2 py-1.5">

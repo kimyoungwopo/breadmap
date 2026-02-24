@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ReviewCard } from "@/components/discover/ReviewCard";
 import { CourseFeedCard } from "@/components/discover/CourseFeedCard";
+import { BakeryExploreTab } from "@/components/discover/BakeryExploreTab";
 import { useCourseClone } from "@/hooks/useCourseClone";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,12 +14,13 @@ import { cn } from "@/lib/utils";
 import type { FeedItem } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-type TabType = "all" | "reviews" | "courses";
+type TabType = "all" | "reviews" | "courses" | "bakeries";
 
 const SUB_TABS: { value: TabType; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "reviews", label: "후기" },
   { value: "courses", label: "코스" },
+  { value: "bakeries", label: "빵집" },
 ];
 
 const LIMIT = 10;
@@ -62,8 +64,9 @@ export default function DiscoverPage() {
     []
   );
 
-  // Initial fetch & tab change
+  // Initial fetch & tab change (skip for bakeries tab)
   useEffect(() => {
+    if (tab === "bakeries") return;
     setItems([]);
     fetchFeed(tab, 0);
   }, [tab, fetchFeed]);
@@ -100,6 +103,11 @@ export default function DiscoverPage() {
       </header>
 
       {/* Content */}
+      {tab === "bakeries" ? (
+        <div className="p-4 page-enter">
+          <BakeryExploreTab />
+        </div>
+      ) : (
       <div className="flex flex-col gap-3 p-4 page-enter">
         {loading ? (
           // Skeleton loading
@@ -157,6 +165,7 @@ export default function DiscoverPage() {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,8 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useCourseClone } from "@/hooks/useCourseClone";
+import { useBookmark } from "@/hooks/useBookmark";
+import { useShare } from "@/hooks/useShare";
 import {
   ArrowLeft,
   MapPin,
@@ -20,8 +22,13 @@ import {
   Loader2,
   Trash2,
   Download,
+  Bookmark,
+  Share2,
+  Globe,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { openKakaoNavi } from "@/lib/kakao/navigation";
 import type { FeedUser } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -50,6 +57,9 @@ interface CourseDetail {
   region: string | null;
   total_distance_m: number | null;
   total_duration_s: number | null;
+  is_public?: boolean;
+  bookmark_count?: number;
+  user_bookmarked?: boolean;
   created_at: string;
   user?: FeedUser;
   stops: CourseStop[];
@@ -62,7 +72,10 @@ export default function CourseDetailPage() {
   const [map, setMap] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authUser, setAuthUser] = useState<SupabaseUser | null>(null);
+  const [isPublic, setIsPublic] = useState(true);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
   const { cloneCourse, isCloning } = useCourseClone();
+  const { share } = useShare();
 
   const handleMapReady = useCallback((m: any) => {
     setMap(m);
@@ -76,7 +89,9 @@ export default function CourseDetailPage() {
 
       const res = await fetch(`/api/courses/${id}`);
       if (res.ok) {
-        setCourse(await res.json());
+        const data = await res.json();
+        setCourse(data);
+        setIsPublic(data.is_public !== false);
       }
       setLoading(false);
     };
@@ -122,6 +137,43 @@ export default function CourseDetailPage() {
     if (res.ok) {
       toast.success("코스가 삭제되었어요");
       router.push("/course");
+    }
+  };
+
+  const handleShare = () => {
+    if (!course) return;
+    share({
+      title: `${course.title} - 빵지순례`,
+      text: `${course.stops.length}곳의 빵집을 순례하는 코스예요!`,
+      url: `${window.location.origin}/course/${course.id}`,
+    });
+  };
+
+  const handleToggleVisibility = async () => {
+    if (!course || togglingVisibility) return;
+    setTogglingVisibility(true);
+
+    const newValue = !isPublic;
+    setIsPublic(newValue); // optimistic
+
+    try {
+      const res = await fetch(`/api/courses/${course.id}/visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_public: newValue }),
+      });
+
+      if (res.ok) {
+        toast.success(newValue ? "코스가 공개되었어요" : "코스가 비공개로 전환되었어요");
+      } else {
+        setIsPublic(!newValue); // rollback
+        toast.error("설정 변경에 실패했어요");
+      }
+    } catch {
+      setIsPublic(!newValue); // rollback
+      toast.error("네트워크 오류가 발생했어요");
+    } finally {
+      setTogglingVisibility(false);
     }
   };
 
@@ -193,6 +245,8 @@ export default function CourseDetailPage() {
         }
       : { lat: 37.5665, lng: 126.978 };
 
+  const isOwner = authUser?.id === course.user_id;
+
   return (
     <div className="flex flex-col pb-20">
       {/* Header */}
@@ -209,7 +263,7 @@ export default function CourseDetailPage() {
           <h1 className="flex-1 truncate text-lg font-bold">
             {course.title}
           </h1>
-          {authUser?.id === course.user_id ? (
+          {isOwner ? (
             <Button
               variant="ghost"
               size="icon"
@@ -274,7 +328,7 @@ export default function CourseDetailPage() {
                 <AvatarFallback>{course.user.nickname.charAt(0)}</AvatarFallback>
               </Avatar>
               <span className="text-sm font-semibold">{course.user.nickname}</span>
-              {authUser?.id === course.user_id && (
+              {isOwner && (
                 <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                   나
                 </span>
@@ -300,7 +354,68 @@ export default function CourseDetailPage() {
           <p className="mt-1 text-xs text-muted-foreground">
             {formatDate(course.created_at)} 생성
           </p>
+
+          {/* Action buttons row */}
+          <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
+            {/* Bookmark */}
+            {authUser && (
+              <BookmarkButton
+                courseId={course.id}
+                initialBookmarked={course.user_bookmarked ?? false}
+                initialCount={course.bookmark_count ?? 0}
+              />
+            )}
+
+            {/* Share */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 rounded-xl text-xs"
+              onClick={handleShare}
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              공유
+            </Button>
+
+            {/* Visibility toggle (owner only) */}
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto gap-1.5 rounded-xl text-xs"
+                onClick={handleToggleVisibility}
+                disabled={togglingVisibility}
+              >
+                {isPublic ? (
+                  <>
+                    <Globe className="h-3.5 w-3.5" />
+                    공개
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-3.5 w-3.5" />
+                    비공개
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Navi CTA */}
+        {course.stops.length > 0 && (
+          <Button
+            size="cta"
+            className="w-full"
+            onClick={() => {
+              const first = course.stops[0].bakery;
+              openKakaoNavi(first.name, first.lat, first.lng);
+            }}
+          >
+            <Navigation className="h-5 w-5" />
+            코스 네비 시작
+          </Button>
+        )}
 
         {/* Stops */}
         <div>
@@ -308,40 +423,51 @@ export default function CourseDetailPage() {
           <div className="flex flex-col">
             {course.stops.map((stop, i) => (
               <div key={stop.id}>
-                <button
-                  onClick={() => router.push(`/bakery/${stop.bakery.id}`)}
-                  className="flex w-full items-center gap-3 rounded-2xl p-3 text-left hover:bg-muted active:scale-[0.98] transition-transform"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-white">
-                    {i + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {stop.bakery.name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {stop.bakery.address}
-                    </p>
-                    {stop.bakery.category && (
-                      <span className="mt-0.5 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] text-secondary-foreground">
-                        {stop.bakery.category}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    {stop.bakery.avg_rating > 0 && (
-                      <div className="flex items-center gap-0.5 text-xs font-semibold text-yellow-600">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        {stop.bakery.avg_rating.toFixed(1)}
-                      </div>
-                    )}
-                    {stop.bakery.checkin_count > 0 && (
-                      <span className="text-[10px] text-muted-foreground">
-                        {stop.bakery.checkin_count}회 체크인
-                      </span>
-                    )}
-                  </div>
-                </button>
+                <div className="flex w-full items-center gap-3 rounded-2xl p-3 hover:bg-muted transition-colors">
+                  <button
+                    onClick={() => router.push(`/bakery/${stop.bakery.id}`)}
+                    className="flex flex-1 items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-white">
+                      {i + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {stop.bakery.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {stop.bakery.address}
+                      </p>
+                      {stop.bakery.category && (
+                        <span className="mt-0.5 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] text-secondary-foreground">
+                          {stop.bakery.category}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {stop.bakery.avg_rating > 0 && (
+                        <div className="flex items-center gap-0.5 text-xs font-semibold text-yellow-600">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          {stop.bakery.avg_rating.toFixed(1)}
+                        </div>
+                      )}
+                      {stop.bakery.checkin_count > 0 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {stop.bakery.checkin_count}회 체크인
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() =>
+                      openKakaoNavi(stop.bakery.name, stop.bakery.lat, stop.bakery.lng)
+                    }
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary active:scale-95 transition-transform"
+                    title="길찾기"
+                  >
+                    <Navigation className="h-4 w-4" />
+                  </button>
+                </div>
 
                 {/* Connector */}
                 {i < course.stops.length - 1 && (
@@ -364,5 +490,36 @@ export default function CourseDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Separate bookmark button component to use the hook
+function BookmarkButton({
+  courseId,
+  initialBookmarked,
+  initialCount,
+}: {
+  courseId: string;
+  initialBookmarked: boolean;
+  initialCount: number;
+}) {
+  const { bookmarked, count, toggleBookmark } = useBookmark(
+    courseId,
+    initialBookmarked,
+    initialCount
+  );
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="gap-1.5 rounded-xl text-xs"
+      onClick={toggleBookmark}
+    >
+      <Bookmark
+        className={`h-3.5 w-3.5 ${bookmarked ? "fill-primary text-primary" : ""}`}
+      />
+      {count > 0 ? count : "북마크"}
+    </Button>
   );
 }
