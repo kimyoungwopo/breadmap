@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { LogOut, Star, ChevronRight } from "lucide-react";
+import { LogOut, Star, ChevronRight, Pencil, Camera, Loader2, X, Check } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { toast } from "sonner";
 import { MonthlyChart } from "@/components/stats/MonthlyChart";
 import { TopBreads } from "@/components/stats/TopBreads";
 import { FavoriteBakeries } from "@/components/stats/FavoriteBakeries";
@@ -27,6 +29,10 @@ interface CheckinItem {
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<{
+    nickname: string;
+    avatar_url: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ bakeries: 0, breads: 0, courses: 0 });
   const [checkins, setCheckins] = useState<CheckinItem[]>([]);
@@ -45,6 +51,17 @@ export default function ProfilePage() {
       if (!u) {
         setLoading(false);
         return;
+      }
+
+      // Read custom profile from API (uses service client, always works)
+      try {
+        const res = await fetch("/api/profile");
+        if (res.ok) {
+          const p = await res.json();
+          setProfile({ nickname: p.nickname, avatar_url: p.avatar_url });
+        }
+      } catch {
+        // Fallback to user_metadata handled below
       }
 
       const { data: checkinData } = await supabase
@@ -225,10 +242,11 @@ export default function ProfilePage() {
   }
 
   const nickname =
+    profile?.nickname ||
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
     "빵순이";
-  const avatarUrl = user.user_metadata?.avatar_url;
+  const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
   const badge = getBadge();
 
   return (
@@ -250,38 +268,14 @@ export default function ProfilePage() {
 
       <div className="flex flex-col gap-5 p-4 page-enter">
         {/* Profile card */}
-        <div className="flex flex-col items-center gap-3 rounded-2xl bg-card p-6 shadow-sm">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={avatarUrl} alt={nickname} />
-            <AvatarFallback className="bg-primary/10 text-2xl text-primary">
-              {nickname[0]}
-            </AvatarFallback>
-          </Avatar>
-          <div className="text-center">
-            <p className="text-xl font-bold">{nickname}</p>
-            <Badge variant="secondary" className="mt-1 px-3 py-1 text-xs font-semibold">
-              {badge.emoji} {badge.title}
-            </Badge>
-          </div>
-
-          {/* Inline stats */}
-          <div className="mt-2 flex w-full justify-around">
-            <div className="flex flex-col items-center">
-              <p className="text-xl font-bold">{stats.bakeries}</p>
-              <p className="text-[11px] text-muted-foreground">정복 빵집</p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="flex flex-col items-center">
-              <p className="text-xl font-bold">{stats.breads}</p>
-              <p className="text-[11px] text-muted-foreground">먹은 빵</p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="flex flex-col items-center">
-              <p className="text-xl font-bold">{stats.courses}</p>
-              <p className="text-[11px] text-muted-foreground">코스</p>
-            </div>
-          </div>
-        </div>
+        <ProfileCard
+          user={user}
+          nickname={nickname}
+          avatarUrl={avatarUrl}
+          badge={badge}
+          stats={stats}
+          onProfileUpdate={(n, a) => setProfile({ nickname: n, avatar_url: a })}
+        />
 
         {/* 통계 섹션 */}
         {checkins.length > 0 && (
@@ -367,6 +361,209 @@ export default function ProfilePage() {
               <span className="text-muted-foreground">1.0.0</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Profile Card with inline edit ---
+function ProfileCard({
+  user,
+  nickname,
+  avatarUrl,
+  badge,
+  stats,
+  onProfileUpdate,
+}: {
+  user: SupabaseUser;
+  nickname: string;
+  avatarUrl: string | undefined;
+  badge: { emoji: string; title: string };
+  stats: { bakeries: number; breads: number; courses: number };
+  onProfileUpdate: (nickname: string, avatarUrl: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(nickname);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("2MB 이하 사진만 업로드할 수 있어요");
+      return;
+    }
+    setAvatarFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleSave = async () => {
+    if (!editName.trim()) {
+      toast.error("닉네임을 입력해주세요!");
+      return;
+    }
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      let newAvatarUrl = avatarUrl;
+
+      // Upload avatar if changed
+      if (avatarFile) {
+        const ext = avatarFile.name.split(".").pop() || "jpg";
+        const path = `avatars/${user.id}.${ext}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from("photos")
+          .upload(path, avatarFile, { upsert: true });
+
+        if (uploadErr) {
+          toast.error("사진 업로드에 실패했어요");
+          setSaving(false);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("photos")
+          .getPublicUrl(path);
+        newAvatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      }
+
+      // Save via API (service-client upsert — creates record if missing, updates if exists)
+      const trimmedName = editName.trim();
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nickname: trimmedName,
+          avatar_url: newAvatarUrl ?? null,
+        }),
+      });
+
+      if (!res.ok) {
+        toast.error("프로필 저장에 실패했어요");
+      } else {
+        const saved = await res.json();
+        toast.success("프로필이 업데이트되었어요!");
+        onProfileUpdate(saved.nickname, saved.avatar_url);
+        setEditing(false);
+        setAvatarFile(null);
+        setPreviewUrl(null);
+      }
+    } catch {
+      toast.error("네트워크 오류가 발생했어요");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setEditName(nickname);
+    setAvatarFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  const displayAvatar = previewUrl || avatarUrl;
+
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-2xl bg-card p-6 shadow-sm">
+      {/* Avatar */}
+      <div className="relative">
+        <Avatar className="h-20 w-20">
+          <AvatarImage src={displayAvatar} alt={editName} />
+          <AvatarFallback className="bg-primary/10 text-2xl text-primary">
+            {(editName || nickname)[0]}
+          </AvatarFallback>
+        </Avatar>
+        {editing && (
+          <label className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-md active:scale-95 transition-transform">
+            <Camera className="h-4 w-4" />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarPick}
+            />
+          </label>
+        )}
+      </div>
+
+      {/* Name + badge */}
+      {editing ? (
+        <div className="flex w-full flex-col items-center gap-3">
+          <Input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="닉네임"
+            className="h-10 max-w-[200px] rounded-xl text-center text-base font-bold"
+            maxLength={20}
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              className="gap-1 rounded-xl"
+              disabled={saving}
+            >
+              <X className="h-3.5 w-3.5" />
+              취소
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              className="gap-1 rounded-xl"
+              disabled={saving || !editName.trim()}
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5" />
+              )}
+              저장
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center">
+          <div className="flex items-center gap-1.5">
+            <p className="text-xl font-bold">{nickname}</p>
+            <button
+              onClick={() => {
+                setEditName(nickname);
+                setEditing(true);
+              }}
+              className="rounded-full p-1 text-muted-foreground hover:bg-muted active:scale-95 transition-all"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <Badge variant="secondary" className="mt-1 px-3 py-1 text-xs font-semibold">
+            {badge.emoji} {badge.title}
+          </Badge>
+        </div>
+      )}
+
+      {/* Inline stats */}
+      <div className="mt-2 flex w-full justify-around">
+        <div className="flex flex-col items-center">
+          <p className="text-xl font-bold">{stats.bakeries}</p>
+          <p className="text-[11px] text-muted-foreground">정복 빵집</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div className="flex flex-col items-center">
+          <p className="text-xl font-bold">{stats.breads}</p>
+          <p className="text-[11px] text-muted-foreground">먹은 빵</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div className="flex flex-col items-center">
+          <p className="text-xl font-bold">{stats.courses}</p>
+          <p className="text-[11px] text-muted-foreground">코스</p>
         </div>
       </div>
     </div>
